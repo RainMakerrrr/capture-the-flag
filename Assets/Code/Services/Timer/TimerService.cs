@@ -4,19 +4,31 @@ namespace Code.Services.Timer
 {
     public class TimerService : ITimerService
     {
-        public float Timer { get; private set; }
+        public float Current { get; private set; }
+
+        public float Max => _targetTime;
+        public bool IsStopped => _isStopped;
 
         private readonly float _targetTime;
+        private bool _isStopped;
 
         public TimerService(float targetTime)
         {
             _targetTime = targetTime;
         }
 
-        public void Reset() => Timer = 0;
+        public void Reset() => Current = 0;
 
-        public void Tick() => Timer += Time.deltaTime;
+        public void Tick()
+        {
+            if (_isStopped == false && IsTimerEnd() == false)
+                Current += Time.deltaTime;
+        }
 
-        public bool IsTimerEnd() => Timer >= _targetTime;
+        public void Stop() => _isStopped = true;
+
+        public void Resume() => _isStopped = false;
+
+        public bool IsTimerEnd() => Current >= _targetTime;
     }
 }

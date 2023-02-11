@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Code.Interaction;
 using Code.Interaction.Flags;
+using Code.Player;
+using Code.Services.Factories;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -10,45 +10,46 @@ namespace Code
 {
     public class FlagSpawner : MonoBehaviour
     {
-        [SerializeField] private Flag _prefab;
+        [SerializeField] private float _distance = 12f;
+        [SerializeField] private float _radius = 15f;
+        [SerializeField] private float _positionY = 0.3f;
 
-        private List<Flag> _flags = new();
+        private readonly List<Flag> _flags = new();
+        private IFlagFactory _factory;
+        private int _flagsCount;
 
-        private void Start()
+        public IReadOnlyList<Flag> Flags => _flags;
+
+        public void Construct(IFlagFactory factory, int flagsCount)
         {
-            SpawnFlags();
+            _factory = factory;
+            _flagsCount = flagsCount;
         }
-
-        private void SpawnFlags()
+        
+        public void SpawnFlags()
         {
-            for (int i = 0; i < 5; i++)
+            Vector3 center = transform.position;
+
+            for (int i = 0; i < _flagsCount; i++)
             {
-                Vector3 position = Random.insideUnitSphere * 8f;
-                position.y = 1f;
-                
-                Flag flagInstance = Instantiate(_prefab, position, Quaternion.identity, transform);
-                
-                if (_flags.Count > 0)
-                {
-                    while (IsFlagCloserToOthers(flagInstance))
-                    {
-                        position = Random.insideUnitSphere * 12f;
-                        position.y = 1f;
-                        flagInstance.transform.position = position;
-                    }
-                }
-                
+                Vector3 position;
+
+                do position = RandomOnSphere(center, _radius);
+                while (AnyFlagCloserThan(position, _distance));
+
+                position.y = _positionY;
+
+                Flag flagInstance = _factory.Create(position, transform);
+                flagInstance.name = $"flag {i}";
+
                 _flags.Add(flagInstance);
             }
         }
 
-        private bool IsFlagCloserToOthers(Flag flag)
-        {
-            Debug.Log(_flags);
-            Debug.Log(_flags.Count);
-            Debug.Log(flag);
-            
-            return _flags.Any(f => Vector3.Distance(f.transform.position, flag.transform.position) <= 8);
-        }
+        private bool AnyFlagCloserThan(Vector3 position, float minDistanceSqr) => _flags.Any(p =>
+            Vector2.Distance(new Vector2(p.transform.position.x, p.transform.position.z),
+                new Vector2(position.x, position.z)) <= minDistanceSqr);
+
+        private Vector3 RandomOnSphere(Vector3 center, float radius) => center + Random.onUnitSphere * radius;
     }
 }

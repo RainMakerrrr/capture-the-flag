@@ -1,24 +1,21 @@
-﻿using System;
-using Code.Services.Input;
+﻿using Code.Services.Input;
 using UnityEngine;
 
 namespace Code.Player
 {
     public class PlayerMovement : MonoBehaviour
     {
-        [SerializeField] private Joystick _joystick;
-
         private IInputService _inputService;
-
-        private void Start()
+        private float _moveSpeed;
+        
+        public void Construct(IInputService inputService, float moveSpeed)
         {
-            _inputService = new JoystickInputService(_joystick);
+            _inputService = inputService;
+            _moveSpeed = moveSpeed;
         }
 
-        private void Update()
-        {
-            transform.Translate(_inputService.Movement * 5f * Time.deltaTime);
-            //transform.position += _input.Movement * 5f;
-        }
+        private void Update() => Move();
+
+        private void Move() => transform.Translate(_inputService.Movement * (_moveSpeed * Time.deltaTime));
     }
 }
